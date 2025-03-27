@@ -6,14 +6,13 @@ local function toggleAttack()
 
     if running then
         spawn(function()
-            while running and wait(0.1) do
+            while running do
+                -- Start checking players only when running is true
                 for _, player in pairs(game:GetService("Players"):GetPlayers()) do
                     pcall(function()
                         local localPlayer = game:GetService("Players").LocalPlayer
                         local enemyChar = player.Character
                         local localChar = localPlayer.Character
-                        
-                        if not running then return end -- Stop if running is false
                         
                         if player ~= localPlayer 
                         and enemyChar 
@@ -28,7 +27,6 @@ local function toggleAttack()
                                 localChar.HumanoidRootPart.CFrame = enemyChar.HumanoidRootPart.CFrame
 
                                 for _, target in pairs(game:GetService("Players"):GetPlayers()) do
-                                    if not running then return end -- Stop if running is false
                                     if target ~= localPlayer and target.Character then
                                         game.ReplicatedStorage.meleeEvent:FireServer(target)
                                     end
@@ -42,6 +40,7 @@ local function toggleAttack()
                         end
                     end)
                 end
+                wait(0.1) -- Small wait to prevent script from overloading the server
             end
         end)
     end
@@ -50,6 +49,6 @@ end
 -- Keybind: Press "K" to start/stop
 game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Enum.KeyCode.K then
-        toggleAttack()
+        toggleAttack() -- Trigger start/stop on "K" key press
     end
 end)
