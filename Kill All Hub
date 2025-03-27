@@ -1,33 +1,55 @@
-spawn(function()
-    while wait(0.1) do
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            pcall(function()
-                local localPlayer = game:GetService("Players").LocalPlayer
-                local enemyChar = player.Character
-                local localChar = localPlayer.Character
-                
-                if player ~= localPlayer 
-                and enemyChar 
-                and localChar 
-                and enemyChar:FindFirstChild("HumanoidRootPart") 
-                and localChar:FindFirstChild("HumanoidRootPart") 
-                and not enemyChar:FindFirstChildOfClass("ForceField") 
-                and enemyChar:FindFirstChildOfClass("Humanoid").Health > 0 then
+local running = false -- Script starts as inactive
 
-                    repeat
-                        wait(0.1)
-                        localChar.HumanoidRootPart.CFrame = enemyChar.HumanoidRootPart.CFrame
+local function toggleAttack()
+    running = not running -- Toggle between true and false
+    print(running and "Attack started!" or "Attack stopped!")
 
-                        for _, target in pairs(game:GetService("Players"):GetPlayers()) do
-                            if target ~= localPlayer and target.Character then
-                                game.ReplicatedStorage.meleeEvent:FireServer(target)
-                            end
+    if running then
+        spawn(function()
+            while running and wait(0.1) do
+                for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                    pcall(function()
+                        local localPlayer = game:GetService("Players").LocalPlayer
+                        local enemyChar = player.Character
+                        local localChar = localPlayer.Character
+                        
+                        if not running then return end -- Stop if running is false
+                        
+                        if player ~= localPlayer 
+                        and enemyChar 
+                        and localChar 
+                        and enemyChar:FindFirstChild("HumanoidRootPart") 
+                        and localChar:FindFirstChild("HumanoidRootPart") 
+                        and not enemyChar:FindFirstChildOfClass("ForceField") 
+                        and enemyChar:FindFirstChildOfClass("Humanoid").Health > 0 then
+
+                            repeat
+                                wait(0.1)
+                                localChar.HumanoidRootPart.CFrame = enemyChar.HumanoidRootPart.CFrame
+
+                                for _, target in pairs(game:GetService("Players"):GetPlayers()) do
+                                    if not running then return end -- Stop if running is false
+                                    if target ~= localPlayer and target.Character then
+                                        game.ReplicatedStorage.meleeEvent:FireServer(target)
+                                    end
+                                end
+                            until not running 
+                                or not enemyChar 
+                                or not enemyChar:FindFirstChildOfClass("Humanoid") 
+                                or enemyChar:FindFirstChildOfClass("Humanoid").Health <= 0
+
+                            break -- Stop after attacking one player
                         end
-                    until not enemyChar 
-                        or not enemyChar:FindFirstChildOfClass("Humanoid") 
-                        or enemyChar:FindFirstChildOfClass("Humanoid").Health <= 0
+                    end)
                 end
-            end)
-        end
+            end
+        end)
+    end
+end
+
+-- Keybind: Press "K" to start/stop
+game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.K then
+        toggleAttack()
     end
 end)
